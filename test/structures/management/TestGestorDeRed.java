@@ -93,4 +93,62 @@ public class TestGestorDeRed {
         gestor.limpiarHistorialAntiguo(10);
         assertEquals(10, gestor.obtenerEventosRecientes(100).size());
     }
+
+    @Test
+    void testProgramarConsulta_NoDebeDuplicar() {
+        gestor.programarConsulta("S1");
+        gestor.programarConsulta("S1");
+        gestor.programarConsulta("S2");
+
+        assertEquals("S1", gestor.obtenerSiguienteSensor());
+        assertEquals("S2", gestor.obtenerSiguienteSensor());
+        assertEquals("S1", gestor.obtenerSiguienteSensor(), "S1 no debe estar duplicado");
+    }
+
+    @Test
+    void testObtenerVecinos_SensorInexistenteRetornaVacio() {
+        List<String> vecinos = gestor.obtenerVecinos("DESCONOCIDO");
+        assertNotNull(vecinos);
+        assertTrue(vecinos.isEmpty());
+    }
+
+    @Test
+    void testEstacionesAisladas_DetectaEstacionRegistradaSinVecinos() {
+        gestor.registrarConexion("S1", "S2");
+        gestor.registrarEstacion("S3_AISLADO");
+
+        List<String> aisladas = gestor.detectarEstacionesAisladas();
+        assertNotNull(aisladas);
+        assertTrue(aisladas.contains("S3_AISLADO"));
+        assertFalse(aisladas.contains("S1"));
+        assertFalse(aisladas.contains("S2"));
+    }
+
+    @Test
+    void testCicloMonitoreo_ColaVaciaRetornaNull() {
+        assertNull(gestor.obtenerSiguienteSensor());
+    }
+
+    @Test
+    void testNavegacionAlertas_VaciaRetornaNull() {
+        assertNull(gestor.navegarAlSiguiente());
+        assertNull(gestor.navegarAlAnterior());
+    }
+
+    @Test
+    void testFiltrarAlertasCriticas_ConStreams() {
+        LecturaSensor normal = new LecturaSensor("S1", "2026-10-24 10:00", 22.0, 50.0, 25.0);
+        LecturaSensor critica1 = new LecturaSensor("S2", "2026-10-24 10:01", 23.0, 55.0, 75.0);
+        LecturaSensor critica2 = new LecturaSensor("S3", "2026-10-24 10:02", 24.0, 60.0, 120.0);
+
+        gestor.recibirLectura(normal);
+        gestor.recibirLectura(critica1);
+        gestor.recibirLectura(critica2);
+
+        List<LecturaSensor> criticas = gestor.filtrarAlertasCriticas(50.0);
+        assertEquals(2, criticas.size());
+        assertTrue(criticas.contains(critica1));
+        assertTrue(criticas.contains(critica2));
+        assertFalse(criticas.contains(normal));
+    }
 }
