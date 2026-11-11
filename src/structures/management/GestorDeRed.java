@@ -50,7 +50,14 @@ public class GestorDeRed {
     public void agregarEvento(String evento) {
         // TODO 1: Implementar la adición del evento al historial.
         // Debe registrarse la fecha/hora actual junto con la descripción del evento.
-        String marcaTiempo = "[" + new java.util.Date() + "] ";
+        java.util.Date fecha = new java.util.Date();
+        String fechaTexto;
+        try {
+            fechaTexto = fecha.toString();
+        } catch (Throwable t) {
+            fechaTexto = java.time.Instant.ofEpochMilli(fecha.getTime()).toString();
+        }
+        String marcaTiempo = "[" + fechaTexto + "] ";
         historialEventos.add(marcaTiempo + evento);
     }
 
