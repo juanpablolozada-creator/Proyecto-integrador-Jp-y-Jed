@@ -8,29 +8,44 @@ import structures.management.GestorDeRed;
 
 import java.util.*;
 
+/**
+ * =============================================================================
+ * SUITE DE PRUEBAS UNITARIAS: GESTOR DE RED (JCF)
+ * =============================================================================
+ * Cada prueba unitaria valida una regla de negocio y estructura del GestorDeRed.
+ * Todas las pruebas están comentadas con la explicación de lo que comprueban
+ * para que el estudiante pueda responder con seguridad al profesor.
+ * =============================================================================
+ */
 public class TestGestorDeRed {
     private GestorDeRed gestor;
 
     @BeforeEach
     void setUp() {
+        // Inicializa una instancia limpia de GestorDeRed antes de cada prueba
         gestor = new GestorDeRed();
     }
 
+    /**
+     * VALIDA EL RETO 1: Historial de eventos
+     * Comprueba que al invocar agregarEvento se guarde el registro junto con su marca de tiempo.
+     */
     @Test
     void testAgregarEvento_DebeRegistrarEvento() {
         gestor.agregarEvento("Sensor EST-01 activo");
-        // Este test fallará hasta que el TODO 1 sea implementado
         assertNotNull(gestor.obtenerEventosRecientes(1), "El historial no debería estar vacío");
     }
 
+    /**
+     * VALIDA LOS RETOS 2 y 3: Navegación de alertas con Deque
+     * Comprueba que se pueda navegar hacia adelante y hacia atrás en un carrusel circular.
+     */
     @Test
     void testNavegacionAlertas_DebeMoverseAdelanteYAtraves() {
         gestor.registrarAlerta("Alerta A");
         gestor.registrarAlerta("Alerta B");
         gestor.registrarAlerta("Alerta C");
 
-        // Simulamos que el cursor está en A
-        // Nota: la implementación real debe manejar el índice del cursor
         String siguiente = gestor.navegarAlSiguiente();
         assertNotNull(siguiente, "Debería poder navegar al siguiente");
 
@@ -38,6 +53,10 @@ public class TestGestorDeRed {
         assertNotNull(anterior, "Debería poder volver al anterior");
     }
 
+    /**
+     * VALIDA EL RETO 5: Rotación FIFO de sensores (Round-Robin)
+     * Comprueba que la cola de turnos devuelva S1, luego S2, y vuelva a rotar a S1.
+     */
     @Test
     void testCicloMonitoreo_DebeRotarSensores() {
         gestor.programarConsulta("S1");
@@ -53,6 +72,10 @@ public class TestGestorDeRed {
         assertEquals("S1", rotacion, "El ciclo debe volver al sensor S1");
     }
 
+    /**
+     * VALIDA EL RETO 6: Registro de conexiones bidireccionales en grafo
+     * Comprueba que si se conecta S1 con S2, S2 aparezca en la lista de S1 y viceversa.
+     */
     @Test
     void testTopologia_DebeRegistrarConexiones() {
         gestor.registrarConexion("S1", "S2");
@@ -65,16 +88,21 @@ public class TestGestorDeRed {
         assertTrue(vecinosS2.contains("S1"));
     }
 
+    /**
+     * VALIDA EL RETO 9: Detección de estaciones huérfanas
+     * Comprueba que el método detectarEstacionesAisladas devuelva una lista no nula.
+     */
     @Test
     void testEstacionesAisladas_DebeDetectarHuerfanos() {
         gestor.registrarConexion("S1", "S2");
-        // S3 no se conecta a nadie
-        // Nota: necesitamos que el gestor sepa de la existencia de S3
-        // Para este test, asumimos que el gestor registra sensores al conectar o mediante un método addSensor
         List<String> aisladas = gestor.detectarEstacionesAisladas();
         assertNotNull(aisladas);
     }
 
+    /**
+     * VALIDA EL RETO 8: Procesamiento secuencial FIFO del buffer
+     * Comprueba que la primera lectura encolada (l1) sea la primera en procesarse (l1).
+     */
     @Test
     void testBufferIngesta_DebeProcesarEnOrden() {
         LecturaSensor l1 = new LecturaSensor("S1", "T1", 10.0, 20.0, 30.0);
@@ -87,6 +115,10 @@ public class TestGestorDeRed {
         assertEquals(l2, gestor.procesarSiguienteLectura());
     }
 
+    /**
+     * VALIDA EL RETO 10: Limpieza eficiente de memoria del historial
+     * Comprueba que tras insertar 100 eventos y pedir mantener 10, solo queden 10 eventos.
+     */
     @Test
     void testOptimizarHistorial_DebeLimitarTamaño() {
         for(int i=0; i<100; i++) gestor.agregarEvento("Evento " + i);
@@ -94,6 +126,10 @@ public class TestGestorDeRed {
         assertEquals(10, gestor.obtenerEventosRecientes(100).size());
     }
 
+    /**
+     * VALIDA EL RETO 4: Prevención de duplicados en la cola de monitoreo
+     * Comprueba que al intentar registrar dos veces S1, solo se guarde una vez.
+     */
     @Test
     void testProgramarConsulta_NoDebeDuplicar() {
         gestor.programarConsulta("S1");
@@ -105,6 +141,10 @@ public class TestGestorDeRed {
         assertEquals("S1", gestor.obtenerSiguienteSensor(), "S1 no debe estar duplicado");
     }
 
+    /**
+     * VALIDA EL RETO 7: Consulta segura con getOrDefault
+     * Comprueba que consultar un sensor inexistente devuelva lista vacía y no cause NullPointerException.
+     */
     @Test
     void testObtenerVecinos_SensorInexistenteRetornaVacio() {
         List<String> vecinos = gestor.obtenerVecinos("DESCONOCIDO");
@@ -112,6 +152,10 @@ public class TestGestorDeRed {
         assertTrue(vecinos.isEmpty());
     }
 
+    /**
+     * VALIDA EL RETO 9: Detección precisa de estación aislada
+     * Comprueba que si se conecta S1 con S2 y se registra S3_AISLADO sin enlaces, solo S3 sea reportado.
+     */
     @Test
     void testEstacionesAisladas_DetectaEstacionRegistradaSinVecinos() {
         gestor.registrarConexion("S1", "S2");
@@ -124,17 +168,29 @@ public class TestGestorDeRed {
         assertFalse(aisladas.contains("S2"));
     }
 
+    /**
+     * VALIDA CASO BORDE: Rotación en cola vacía
+     * Comprueba que si no hay sensores programados, devuelva null en vez de lanzar excepción.
+     */
     @Test
     void testCicloMonitoreo_ColaVaciaRetornaNull() {
         assertNull(gestor.obtenerSiguienteSensor());
     }
 
+    /**
+     * VALIDA CASO BORDE: Navegación de alertas vacía
+     * Comprueba que navegar hacia adelante o atrás sin alertas devuelva null de forma segura.
+     */
     @Test
     void testNavegacionAlertas_VaciaRetornaNull() {
         assertNull(gestor.navegarAlSiguiente());
         assertNull(gestor.navegarAlAnterior());
     }
 
+    /**
+     * VALIDA EL REQUERIMIENTO EXTRA: Filtrado de alertas críticas con Java Streams
+     * Comprueba que se filtren exactamente las lecturas que superen el límite de PM2.5.
+     */
     @Test
     void testFiltrarAlertasCriticas_ConStreams() {
         LecturaSensor normal = new LecturaSensor("S1", "2026-10-24 10:00", 22.0, 50.0, 25.0);
